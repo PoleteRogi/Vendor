@@ -1,0 +1,225 @@
+<div class="container" style="max-width: 700px; width: 100%; height: fit-content;">
+    <div class="admin-page-top">
+        <div class="left-section" style="display: flex; align-items: center;">
+            <button id="preview-button" class="tooltip"
+                style="margin-right: 20px; width: 42px; height: 42px; padding: 10px; display: flex; justify-content: center; align-items: center;">
+                <img id="preview-icon" src="/assets/ui/eye.svg" alt="">
+
+                <span class="tooltip-text">Preview</span>
+            </button>
+
+            <span class="page-title" id="product-name"></span>
+
+            <button onclick="toggleNameEdit()" class="tooltip"
+                style="margin-left: 20px; width: 42px; height: 42px; margin-right: 5px; padding: 10px; display: flex; justify-content: center; align-items: center;">
+                <img id="edit-icon" src="/assets/ui/edit.svg" alt="">
+
+                <span class="tooltip-text">Edit name</span>
+            </button>
+            <div id="available" value="true" class="tooltip checkbox true"
+                style="width: 42px; height: 42px; margin-right: 5px;">
+                <img src="/assets/ui/check.svg" alt="">
+                <span class="tooltip-text">Toggle product availability</span>
+            </div>
+            <button onclick="deleteProduct()" class="tooltip"
+                style="padding: 10px; width: 42px; height: 42px; display: flex; justify-content: center; align-items: center; margin-right: 20px; ">
+                <img id="edit-icon" src="/assets/ui/close.svg" alt="">
+
+                <span class="tooltip-text">Delete product</span>
+            </button>
+        </div>
+
+        <div class="price-input" style="display: flex; align-items: center; padding: 10px; border: 1px solid var(--border-color); border-radius: .25em;">
+            <span style="margin-right: 10px">$</span>
+            <input id="product-price" type="number" value="70.00" style="border:0px !important; padding: 0px;">
+        </div>
+    </div>
+    <div class="card" style="padding: 40px; margin-bottom: 20px; display: flex; align-items:baseline;">
+        <span>Product images</span>
+        <div class="admin-product-images">
+            <div class="drop-zone" data-index="0">
+                <img id="main-image" class="admin-product-image main">
+            </div>
+
+            <div class="drop-zone" data-index="1">
+                <img id="secondary-image" class="admin-product-image">
+            </div>
+        </div>
+        <span style="margin-top: 20px; margin-bottom: 20px;">Product details</span>
+        
+        <div class="product-details" style="width: 100%;">
+            <input id="subtitle" type="text" placeholder="Subtitle" style="font-style:italic; width: 100%; box-sizing: border-box; margin-bottom: 10px;">
+            <textarea name="" id="description" placeholder="Product's description" style="width: 100%; box-sizing: border-box; height: 500px;"></textarea>
+            <input id="category" type="text" placeholder="Category" style="width: 100%; box-sizing: border-box; margin-top: 10px;">
+        </div>
+
+        <div class="bottom-section" style="margin-left: auto; margin-top: 20px;">
+            <button onclick="saveProductChanges()" class="tooltip primary">
+                Save
+
+                <span class="tooltip-text">Save changes to store</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/base.js"></script>
+
+<script>
+    const productId = window.location.pathname.split('/').pop();
+
+    document.querySelector('#preview-button').onclick = () => window.open('/' + productId);
+
+    let PRODUCT = {}
+    let IMAGES = [];
+
+    fetch("/api/product/" + productId)
+        .then(response => response.json())
+        .then(data => {
+            PRODUCT = data;
+
+            fetch("/api/image/" + productId)
+                .then(response => response.json())
+                .then(data => {
+                    IMAGES = data;
+
+                    updateProductUI();
+                });
+        });
+
+    function updateProductUI() {
+        document.getElementById('product-name').textContent = PRODUCT.name;
+
+        document.querySelector('#main-image').src = "/assets/uploads/" + IMAGES[0];
+        document.querySelector('#main-image').style.opacity = 1;
+        if (IMAGES.length > 1) {
+            document.querySelector('#secondary-image').src = "/assets/uploads/" + IMAGES[1];
+
+            setTimeout(function () {
+                document.querySelector('#secondary-image').style.opacity = 1;
+            }, 300)
+        }
+
+        document.getElementById('product-price').value = PRODUCT.price;
+        document.getElementById('product-price').onchange = function () {
+            PRODUCT.price = this.value;
+        }
+
+        document.getElementById('subtitle').value = PRODUCT.subtitle;
+
+        document.getElementById('subtitle').onchange = function () {
+            PRODUCT.subtitle = this.value;
+        }
+
+        document.getElementById('description').value = PRODUCT.description;
+        document.getElementById('description').onchange = function () {
+            PRODUCT.description = this.value;
+        }
+
+        document.getElementById('available').setAttribute('value', PRODUCT.available)
+        updateCheckboxes();
+        document.getElementById('available').addEventListener('click', () => {
+            PRODUCT.available = !PRODUCT.available;
+            console.log(PRODUCT.available);
+        })
+
+        document.getElementById('category').value = PRODUCT.category;
+        document.getElementById('category').onchange = function () {
+            PRODUCT.category = this.value;
+        }
+    }
+
+    function saveProductChanges() {
+        fetch("/api/edit-product/" + productId, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(PRODUCT)
+        })
+        .then(response => response.text())
+        .then(data => {
+            if(data == 'Product updated')
+            {
+                say('Product updated');
+            }
+        });
+    }
+
+    const productNameText = document.getElementById("product-name");
+
+    function toggleNameEdit() {
+        if (productNameText.getAttribute('contenteditable') === 'true') productNameText.setAttribute('contenteditable',
+            'false');
+        else productNameText.setAttribute('contenteditable', 'true');
+
+        if (productNameText.contentEditable === 'true') {
+            productNameText.focus();
+
+            document.getElementById('edit-icon').src = "/assets/ui/check.svg";
+        } else {
+            document.getElementById('edit-icon').src = "/assets/ui/edit.svg";
+
+            PRODUCT.name = productNameText.textContent;
+
+            saveProductChanges();
+        }
+    }
+
+    document.querySelectorAll(".admin-product-image").forEach((img, index) => {
+
+    img.addEventListener("dragover", e => {
+        e.preventDefault();
+        img.classList.add("dragover");
+    });
+
+    img.addEventListener("dragleave", () => {
+        img.classList.remove("dragover");
+    });
+
+    img.addEventListener("drop", e => {
+        e.preventDefault();
+        img.classList.remove("dragover");
+
+        const file = e.dataTransfer.files[0];
+        if (!file || !file.type.startsWith("image/")) return;
+
+        // Preview
+        const reader = new FileReader();
+        reader.onload = () => {
+            img.src = reader.result;
+            img.style.opacity = 1;
+        };
+        reader.readAsDataURL(file);
+
+        // Upload
+        const formData = new FormData();
+        formData.append("image", file);
+        formData.append("index", index);
+
+        fetch(`/api/upload-image/${productId}`, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                say("Image uploaded")
+            }
+        });
+    });
+
+    window['deleteProduct'] = function deleteProduct() {
+        fetch(`/api/delete-product/${productId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.text())
+        .then(data => {
+            if(data == 'Product deleted')
+            {
+                window.location.href = '/admin/products?say=Product deleted';
+            }
+        });
+    }
+});
+</script>

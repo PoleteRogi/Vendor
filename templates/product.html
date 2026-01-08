@@ -1,0 +1,22 @@
+<a id="product-item-${id}" href="${id}" class="product-item">
+    <img class="product-image" id="main-image-${id}" src="/assets/uploads/placeholder.webp" alt="">
+    <span class="product-name">${name}</span>
+    <span class="tooltip-text" id="${id}-price">${price}</span>
+</a>
+<script>
+    document.getElementById('main-image-${id}').src = "/assets/uploads/" + JSON.parse('${image}');
+
+    document.getElementById('product-item-${id}').onmouseenter = function () {
+        document.getElementById('main-image-${id}').src = "/assets/uploads/" + JSON.parse('${secondary_image}');
+    }
+
+    document.getElementById('product-item-${id}').onmouseleave = function () {
+        document.getElementById('main-image-${id}').src = "/assets/uploads/" + JSON.parse('${image}');
+    }
+
+    document.getElementById('${id}-price').textContent = convertUsd(parseInt("${price}"), CURRENCY_CODE).toLocaleString(
+        'en-US', {
+            style: 'currency',
+            currency: CURRENCY_CODE
+        });
+</script>

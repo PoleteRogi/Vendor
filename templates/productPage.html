@@ -1,0 +1,128 @@
+<main class="product-view-main">
+    <div class="product-view-container">
+        <div class="product-view-image">
+            <img src="" alt="" id="main-image">
+            <div class="image-controls">
+                <button id="prev-image">&#10094;</button>
+                <button id="next-image">&#10095;</button>
+            </div>
+        </div>
+        <div class="product-view-details">
+            <div class="product-view-direction">
+                <a href="/">${category}</a>
+                <span> > </span>
+                <span class="product-view-direction-current">${name}</span></span>
+            </div>
+            <div class="product-view-top">
+                <h1 class="product-view-name">${name}</h1>
+                <span class="product-view-price" id="price-label">${price}</span>
+            </div>
+
+            <span class="product-view-subtitle">${subtitle}</span>
+
+            <div class="divider"></div>
+
+            <p class="product-view-description">
+                ${description}
+            </p>
+
+            <div class="product-view-buy-section">
+                <button onclick="buyNow('${id}')" class="primary">Buy now</button>
+                <button onclick="addToCart('${id}')">Add to cart</button>
+            </div>
+        </div>
+    </div>
+    
+
+    <footer class="related-products">
+        <span class="related-products-title">Related products</span>
+        <div class="product-list horizontal-list" id="product-list" style="--col-count: 6">
+            
+        </div>
+    </footer>
+</main>
+
+<script>
+    // IN USD
+    const price = parseInt("${price}");
+
+    const available = eval("${available}");
+
+    if(!available) document.querySelectorAll('.product-view-buy-section button').forEach(button => button.disabled = true);
+
+    const images = JSON.parse('${images}'); // your array of images
+    const mainImage = document.querySelector('#main-image');
+    let currentIndex = 0;
+    let fading = false;
+
+    function showImage(index) {
+        if (fading) return; // prevent overlapping animations
+        fading = true;
+
+        if(mainImage.style.opacity == 0 && mainImage.loaded) return;
+
+        mainImage.style.opacity = 0;
+        setTimeout(() => {
+            mainImage.src = '/assets/uploads/' + images[index];
+            mainImage.style.opacity = 1;
+            fading = false;
+        }, 300); // fade duration matches CSS transition
+    }
+
+    // Initial image
+    showImage(currentIndex);
+
+    // Controls
+    document.querySelector('#prev-image').addEventListener('click', () => {
+        currentIndex = (currentIndex - 1 + images.length) % images.length;
+        showImage(currentIndex);
+    });
+
+    document.querySelector('#next-image').addEventListener('click', () => {
+        currentIndex = (currentIndex + 1) % images.length;
+        showImage(currentIndex);
+    });
+
+    // MAYBE YOU LIKE
+
+    fetch('/api/related-products/${id}')
+        .then(response => response.json())
+        .then(products => {
+            const productList = document.getElementById('product-list');
+            productList.innerHTML = '';
+
+            for (let i = 0; i < products.length; i++) {
+                const product = products[i];
+
+                productList.innerHTML += `
+
+                <a style="opacity: 0" id="product-item-${product.id}" href="/${product.id}" class="product-item">
+                    <img class="product-image" id="main-image-${product.id}" src="/assets/uploads/placeholder.webp" alt="">
+                    <span class="product-name">${product.name}</span>
+                    <span class="tooltip-text" id="${product.id}-price">${product.price}</span>
+                </a>`
+
+                document.getElementById(`${product.id}-price`).textContent = convertUsd(parseInt(
+                    `${product.price}`), CURRENCY_CODE).toLocaleString(
+                    'en-US', {
+                        style: 'currency',
+                        currency: CURRENCY_CODE
+                    });
+
+                fetch(`/api/image/${product.id}`)
+                .then(response => response.json())
+                .then(images => {
+                    document.getElementById(`main-image-${product.id}`).src = "/assets/uploads/" + images[0];
+                    
+                    setTimeout(function() {
+                        document.getElementById(`product-item-${product.id}`).style.opacity = 1;
+                    }, 100)
+                })
+            }
+
+            if(products.length == 0)
+            {
+                document.querySelector('.related-products').style.display = 'none';
+            }
+        })
+</script>

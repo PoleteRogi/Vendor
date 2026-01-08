@@ -1,0 +1,75 @@
+<main style="display: flex; flex-direction: column; align-items: center; padding: var(--main-padding);">
+    <span style="font-size: 3pc;">Thank you!</span>
+    <span>Your order has been confirmed</span>
+
+    <div class="card order-details" style="margin-top: 40px;">
+        <div class="number-box">
+            <span class="number-box-name">Order number</span>
+            <span class="number-box-number" id="order-number">12h1m4htvpd</span>
+        </div>
+        <div class="number-box">
+            <span class="number-box-name">Date</span>
+            <span class="number-box-number" id="order-date">06/07/2021</span>
+        </div>
+        <div class="number-box">
+            <span class="number-box-name">Order name</span>
+            <span class="number-box-number" id="order-date">${name}</span>
+        </div>
+        <div class="number-box">
+            <span class="number-box-name">Postal code</span>
+            <span class="number-box-number" id="order-date">${postalCode}</span>
+        </div>
+    </div>
+    <div class="card order-items">
+
+    </div>
+    <div class="card order-details">
+        <div class="number-box" style="margin-left: auto; text-align: right;">
+            <span class="number-box-name">Order total</span>
+            <span class="number-box-number" id="order-total">${total}</span>
+        </div>
+    </div>
+</main>
+
+<script>
+    clearCart();
+
+    const orderId = "${id}";
+
+    const total = parseInt("${total}");
+
+    fetch('/api/order/' + orderId)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('order-number').textContent = data.id;
+            document.getElementById('order-date').textContent = new Date(data.paidAt).toLocaleDateString();
+
+            document.querySelector('#order-total').textContent = convertUsd(total, CURRENCY_CODE).toLocaleString('en-US', {
+                style: 'currency',
+                currency: CURRENCY_CODE
+            });
+
+            const cartItems = data.cart;
+
+            const orderItemsContainer = document.querySelector('.order-items');
+
+            for (let i = 0; i < cartItems.length; i++) {
+                const cartItem = cartItems[i];
+
+                orderItemsContainer.innerHTML += `
+                    <div class="cart-product">
+                        <img src="/assets/uploads/${cartItem.images[0]}" alt="">
+                        <div class="cart-product-box-left">
+                            <span>${cartItem.name}</span>
+                        </div>
+                        <div class="cart-product-box-right">
+                            <span>${convertUsd(cartItem.price, CURRENCY_CODE).toLocaleString('en-US', {
+                                        style: 'currency',
+                                        currency: CURRENCY_CODE
+                                    })}</span>
+                        </div>
+                    </div>
+                `
+            }
+        });
+</script>

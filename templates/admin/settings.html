@@ -1,0 +1,116 @@
+<div class="container" style="max-width: 700px; width: 100%; height: fit-content;">
+    <div class="admin-page-top">
+        <div class="left-section" style="display: flex; align-items: center;">
+            <span class="page-title">SETTINGS</span>
+        </div>
+    </div>
+    <div class="card" style="padding: 40px; margin-bottom: 20px; display: flex; align-items:baseline;">
+        <div class="admin-properties">
+            <!--<div class="admin-property">
+                <span class="label" style="margin-bottom: 5px; letter-spacing: normal; font-size: .8em;">STORE NAME</span>
+                <input type="text" id="store-name">
+            </div>-->
+        </div>
+        <div class="bottom-section" style="margin-left: auto; margin-top: 20px;">
+            <button onclick="saveSettingChanges()" class="tooltip primary">
+                Save
+
+                <span class="tooltip-text">Save changes</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/base.js"></script>
+
+<script>
+    let SETTINGS = {}
+    fetch('/api/settings')
+        .then(response => response.json())
+        .then(data => {
+            SETTINGS = data;
+            showSettingsView();
+        });
+
+    function saveSettingChanges() {
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(SETTINGS)
+        })
+        .then(response => response.text())
+        .then(data => {
+            if(data == 'Settings updated')
+            {
+                say('Settings updated');
+            }
+        });
+    }
+
+    function showSettingsView() {
+        document.querySelector('.admin-properties').innerHTML = '';
+        for (const [key, value] of Object.entries(SETTINGS)) {
+            const property = document.createElement('div');
+            property.className = 'admin-property';
+            property.style.opacity = 0;
+            property.style.transform = 'translateY(20px)';
+            property.style.transitionDuration = '1s';
+
+            const objectType = typeof value;
+            var inputType;
+            switch (objectType) {
+                case 'string':
+                    inputType = 'text';
+
+                    if(key.toLowerCase().endsWith('password')) inputType = 'password';
+
+                    break;
+                case 'boolean':
+                    inputType = 'checkbox';
+                    break;
+                case 'number':
+                    inputType = 'number';
+                    break;
+                default:
+                    inputType = 'text';
+                    break;
+            }
+
+            if (inputType === 'checkbox') {
+                property.innerHTML = `
+                    <span class="label" style="margin-bottom: 5px; letter-spacing: normal; font-size: .8em;">${key}</span>
+                    <div style="width: 60px; height: 60px;" id="${key}-value" class="checkbox tooltip ${value ? 'true' : 'false'}">
+                        <img src="/assets/ui/${value ? 'check' : 'close'}.svg" alt="">
+                        <span class="tooltip-text">Toggle ${key}</span>
+                    </div>
+                `;
+
+                document.querySelector('.admin-properties').appendChild(property);
+
+                const checkbox = document.getElementById(`${key}-value`);
+                checkbox.addEventListener('click', () => {
+                    checkbox.classList.toggle('true');
+                    checkbox.classList.toggle('false');
+                    checkbox.querySelector('img').src = `/assets/ui/${checkbox.classList.contains('true') ? 'check' : 'close'}.svg`;
+                    SETTINGS[key] = checkbox.classList.contains('true');
+                });
+
+
+            } else {
+                property.innerHTML = `
+                        <span class="label" style="margin-bottom: 5px; letter-spacing: normal; font-size: .8em;">${key}</span>
+                        <input type="${inputType}" id="${key}-value" value="${value}" onchange="SETTINGS['${key}'] = this.value;">
+                    `;
+            }
+            document.querySelector('.admin-properties').appendChild(property);
+            const input = document.getElementById(`${key}-value`).value = value;
+
+            setTimeout(() => {
+                property.style.opacity = 1;
+                property.style.transform = 'translateY(0px)';
+            }, 100);
+        }
+    }
+</script>

@@ -1,0 +1,214 @@
+<div class="container" style="max-width: 700px; width: 100%; height: fit-content;">
+    <div class="admin-page-top">
+        <span class="page-title">Orders</span>
+    </div>
+    <div class="" style="padding: 0px; margin-bottom: 20px; display: grid;">
+        <div class="orders-top-tabs">
+            <button class="orders-tab active" data-status="completed">Completed</button>
+            <button class="orders-tab" data-status="pending">Pending</button>
+            <button class="orders-tab" data-status="cancelled">Cancelled</button>
+        </div>
+        <div class="orders-search-container">
+            <form action="/admin/orders" method="get">
+                <input name="txt" type="text" id="orders-search" placeholder="Search orders">
+                <select name="type" id="">
+                    <option value="orderId">By order id</option>
+                    <option value="email">By e-mail</option>
+                    <option value="customer">By customer</option>
+                </select>
+                <button type="submit">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </form>
+        </div>
+
+        <div id="orders-list" style="width:100%; display:grid; gap:20px; margin-top:20px;"></div>
+
+    </div>
+</div>
+</div>
+
+<script>
+    // get search params
+    const urlParams = new URLSearchParams(window.location.search);
+
+    window['SEARCH_FILTER'] = {
+        txt: urlParams.get('txt') || '',
+        type: urlParams.get('type') || 'orderId'
+    };
+</script>
+
+<script src="/js/base.js"></script>
+
+<script>
+    let ALL_ORDERS = [];
+    let CURRENT_TAB = 'completed';
+
+    if(!window['SEARCH_FILTER']) window['SEARCH_FILTER'] = {
+        txt: '',
+        type: 'orderId'
+    };
+
+    document.getElementById('orders-search').value = window['SEARCH_FILTER'].txt;
+    document.querySelector('select').value = window['SEARCH_FILTER'].type;
+
+    const ordersList = document.getElementById('orders-list');
+    const tabs = document.querySelectorAll('.orders-tab');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            CURRENT_TAB = tab.dataset.status;
+            renderOrders();
+        });
+    });
+
+    fetch('/api/orders')
+        .then(res => res.json())
+        .then(orders => {
+            ALL_ORDERS = orders;
+            renderOrders();
+        });
+
+    function renderOrders() {
+        ordersList.innerHTML = '';
+
+        let filtered = ALL_ORDERS.filter(o => o.status === CURRENT_TAB);
+
+        if (window['SEARCH_FILTER'].txt) {
+            if (window['SEARCH_FILTER'].type == 'orderId') {
+                filtered = filtered.filter(o => o.id.toLowerCase().includes(window['SEARCH_FILTER'].txt.toLowerCase()));
+            } else if (window['SEARCH_FILTER'].type == 'email') {
+                filtered = filtered.filter(o => o.userData.email.toLowerCase().includes(window['SEARCH_FILTER'].txt.toLowerCase()));
+            } else if (window['SEARCH_FILTER'].type == 'customer') {
+                filtered = filtered.filter(o => o.userData.name.toLowerCase().includes(window['SEARCH_FILTER'].txt.toLowerCase()));
+            }
+        }
+
+        console.log(filtered);
+
+        if (!filtered.length) {
+            ordersList.innerHTML = `<span style="opacity:.5;">No orders</span>`;
+            return;
+        }
+
+        filtered.forEach(order => {
+            const card = document.createElement('div');
+            card.className = 'card order-row';
+            card.style.alignItems = 'stretch';
+            card.style.cursor = 'pointer';
+            card.style.transition = 'opacity 0.5s ease';
+            card.style.opacity = 0;
+
+            card.innerHTML = `
+            <div class="order-row-summary">
+                <div class="number-box">
+                    <span class="number-box-name">Order</span>
+                    <span class="number-box-number">${order.id}</span>
+                </div>
+
+                <div class="number-box">
+                    <span class="number-box-name">Date</span>
+                    <span class="number-box-number">
+                        ${new Date(order.createdAt).toLocaleDateString()}
+                    </span>
+                </div>
+
+                <div class="number-box">
+                    <span class="number-box-name">Total</span>
+                    <span class="number-box-number">
+                        ${convertUsd(order.total, CURRENCY_CODE).toLocaleString('en-US', {
+                            style: 'currency',
+                            currency: CURRENCY_CODE
+                        })}
+                    </span>
+                </div>
+            </div>
+
+            <div class="order-row-items">
+                <div class="order-expanded-details">
+                ${order['userData'] ? `<div>
+                        <span class="label">Customer</span>
+                        <span>${order.userData.name || '—'}</span>
+                    </div>
+
+                    <div>
+                        <span class="label">E-mail</span>
+                        <span>${order.userData.email || '—'}</span>
+                    </div>
+
+                    <div class="address-block">
+                    <span class="label">Address</span>
+                    <span class="address-postal" data-full-address="
+                        ${[
+                            order.userData.address.line1,
+                            order.userData.address.line2,
+                            order.userData.address.city,
+                            order.userData.address.state,
+                            order.userData.address.postal_code,
+                            order.userData.address.country
+                        ].filter(Boolean).join(', ')}
+                    ">
+                        ${order.userData.address.postal_code || '—'}
+                    </span>
+
+                    <span class="address-full">
+                        ${[
+                            order.userData.address.line1,
+                            order.userData.address.line2,
+                            order.userData.address.city,
+                            order.userData.address.state,
+                            order.userData.address.country
+                        ].filter(Boolean).join(', ')}
+                    </span>
+                </div>
+
+                    <div>
+                        <span class="label">Status</span>
+                        <span class="status-chip">${order.status}</span>
+                    </div>` : '<span class="label">No user data</span>'}
+                </div>
+
+                <div class="order-items-list">
+                    ${order.cart.map(item => `
+                        <a href="products/${item.id}" class="cart-product">
+                            <img src="/assets/uploads/${item.images[0]}">
+                            <div class="cart-product-box-left">
+                                <span>${item.name}</span>
+                                <span style="opacity:.5;">
+                                    ${convertUsd(item.price, CURRENCY_CODE).toLocaleString('en-US', {
+                                        style: 'currency',
+                                        currency: CURRENCY_CODE
+                                    })}
+                                </span>
+                            </div>
+                        </a>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+            const items = card.querySelector('.order-row-items');
+            card.querySelector('.order-row-summary').addEventListener('click', () => {
+                card.classList.toggle('open');
+            });
+
+            ordersList.appendChild(card);
+
+            setTimeout(() => {
+                card.style.opacity = 1;
+            }, 100);
+        });
+    }
+
+    ordersList.addEventListener('click', (e) => {
+        const postal = e.target.closest('.address-postal');
+        if (!postal) return;
+
+        e.stopPropagation(); // don't toggle order open/close
+
+        const block = postal.closest('.address-block');
+        block.classList.toggle('open');
+    });
+</script>

@@ -1,0 +1,14 @@
+:root {
+    --bg-color: #f8f8f8;
+    --top-bar-bg-color: #ffffff;
+    --border-color: rgba(0, 0, 0, 0.1);
+    --fg-color: #000000;
+    --primary-color: black;
+    --secondary-color: #fff;
+    --main-padding: 40px;
+    --other-padding: 20px;
+    --font: "Inter", sans-serif;
+    --text-trnsfrm: none;
+    --trnstn-time: .2s;
+    --page-change-time: 1s;
+}

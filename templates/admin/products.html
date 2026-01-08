@@ -1,0 +1,80 @@
+<div class="container" style="max-width: 700px; width: 100%;">
+    <div class="admin-page-top">
+        <span class="page-title">Products</span>
+
+        <button onclick="addProduct()" class="tooltip" style="padding: 10px; display: flex; justify-content: center; align-items: center;">
+            <img src="/assets/ui/plus.svg" alt="">
+        
+            <span class="tooltip-text">Add product</span>
+        </button>
+    </div>
+    <div class="card product-list" style="padding: 40px; margin-bottom: 20px; display: grid;" id="product-list">
+
+    </div>
+</div>
+
+<script src="/js/base.js"></script>
+
+<script>
+    columnsOffset = 2
+    fetch('/api/products')
+        .then(response => response.json())
+        .then(products => {
+            const productList = document.getElementById('product-list');
+            productList.innerHTML = '';
+
+            for (let i = 0; i < products.length; i++) {
+                const product = products[i];
+
+                productList.innerHTML += `
+
+            <a style="opacity: 0" id="product-item-${product.id}" href="/admin/products/${product.id}" class="product-item tooltip">
+                <img class="product-image" id="main-image-${product.id}" src="/assets/uploads/placeholder.webp" alt="">
+                <span class="product-name">${product.name}</span>
+                <span class="tooltip-text" id="${product.id}-price">${product.price}</span>
+            </a>`
+
+                document.getElementById(`${product.id}-price`).textContent = convertUsd(parseInt(
+                    `${product.price}`), CURRENCY_CODE).toLocaleString(
+                    'en-US', {
+                        style: 'currency',
+                        currency: CURRENCY_CODE
+                    });
+
+                if(!product.available)
+                {
+                    document.getElementById(`${product.id}-price`).textContent = 'Unavailable';
+                }
+
+                fetch(`/api/image/${product.id}`)
+                    .then(response => response.json())
+                    .then(images => {
+                        document.getElementById(`main-image-${product.id}`).src = "/assets/uploads/" + images[0];
+                        
+                        setTimeout(function() {
+                            if(!product.available)
+                            {
+                                document.getElementById(`product-item-${product.id}`).style.opacity = .3;
+                                return;
+                            }
+                            document.getElementById(`product-item-${product.id}`).style.opacity = 1;
+                        }, 100)
+                    })
+            }
+        })
+
+    function addProduct()
+    {
+        // post request to add product
+
+        fetch('/api/add-product', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+        }).then(response => response.json())
+        .then(product => {
+            window.location.href = '/admin/products/' + product.id;
+        })
+    }
+</script>

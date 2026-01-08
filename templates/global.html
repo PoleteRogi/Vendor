@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${page_name}</title>
+    <link rel="stylesheet" href="/style/base.css">
+    <link rel="stylesheet" href="/style/theme.css">
+
+    <script src="/js/currency.js"></script>
+    <script src="/js/base.js"></script>
+
+</head>
+
+<body>
+    <div class="top-bar">
+        <a href="/" class="brand">
+            <img src="/assets/brand/logo.svg" alt="" draggable="false">
+        </a>
+        <select name="currency" id="currencySelect">
+
+        </select>
+        <a class="cart-button tooltip" href="#" onclick="toggleCartUI()">
+            <span class="cart-number">0</span>
+            <img src="/assets/ui/cart.svg" alt="" draggable="false">
+            <span class="tooltip-text">Cart</span>
+        </a>
+
+        <div class="cart">
+            <span>Order summary</span>
+
+            <div class="cart-product-list">
+                <!--<div class="cart-product">
+                    <img src="assets/products/wet_towel_bottle.png" alt="">
+                    <div class="cart-product-box-left">
+                        <span>WET TOWEL</span>
+                    </div>
+                    <div class="cart-product-box-right">
+                        <span>$70</span>
+                    </div>
+                    <a class="cart-remove-button" href="#"><img src="assets/ui/close.svg" alt=""></a>
+                </div>-->
+            </div>
+
+            <div class="cart-total">
+                <span class="label">Tax and shipping calculated at checkout</span>
+                <br>
+                <span>Total</span>
+                <span id="cart-total-price">$0.00</span>
+            </div>
+
+            <button class="cart-checkout-button primary" disabled onclick="checkout()">
+                Checkout
+            </button>
+        </div>
+    </div>
+    ${content}
+</body>
+
+</html>

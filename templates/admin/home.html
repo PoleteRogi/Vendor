@@ -1,0 +1,35 @@
+<div class="container" style="max-width: 700px; width: 100%;">
+    <div class="admin-page-top">
+        <span class="page-title">Home</span>
+    </div>
+    <div class="card" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); height: fit-content; width: 100%;">
+        <div class="number-box">
+            <span class="number-box-name">Sessions</span>
+            <span class="number-box-number" id="sessions">0</span>
+        </div>
+        <div class="number-box">
+            <span class="number-box-name">Total sales</span>
+            <span class="number-box-number" id="total-sales">0</span>
+        </div>
+        <div class="number-box">
+            <span class="number-box-name">Orders</span>
+            <span class="number-box-number" id="orders">0</span>
+        </div>
+        <div class="number-box">
+            <span class="number-box-name">Conversion rate</span>
+            <span class="number-box-number" id="conversion-rate">0</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    fetch('/api/analytics')
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('sessions').innerText = data.sessions;
+        document.getElementById('total-sales').innerText = data.totalSales.toLocaleString('en-US', { style: 'currency', currency: CURRENCY_CODE });
+        document.getElementById('orders').innerText = data.orders;
+        // convert to percentage
+        document.getElementById('conversion-rate').innerText = data.conversionRate.toFixed(2) + '%';
+    });
+</script>
