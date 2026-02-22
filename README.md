@@ -1,3 +1,3 @@
 # VENDOR
 
-Fully fledged online story framework and system, fully developed in JavaScript.
+Fully fledged online store framework and system, fully developed in JavaScript.
